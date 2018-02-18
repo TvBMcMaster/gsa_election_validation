@@ -1,0 +1,4 @@
+*.py[co]
+test/
+__pycache__
+*.log
