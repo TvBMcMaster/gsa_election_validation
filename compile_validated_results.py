@@ -8,7 +8,7 @@ try:
 except ImportError:
 	yaml = None
 
-DEBUG = True  # Set this to False before releasing
+DEBUG = False
 
 FACULTY_COLUMN = 2
 
@@ -39,7 +39,7 @@ def create_parser():
 	parser.add_argument('-c', '--config', help="Provide a config file for the program.")
 	#parser.add_argument('-r', '--results_file', default="compilation_results_{}.csv".format(datetime.now().strftime("%Y%m%d")))
 	parser.add_argument('-d', '--directory', default=DEFAULT_OUTPUT_DIR, help="Write compiled votes into a given directory. Default: {}".format(DEFAULT_OUTPUT_DIR))
-
+	parser.add_argument('--debug', action='store_true', help="Run script in debug mode.  Prints more verbose information")
 	return parser
 
 def debug(msg):
@@ -183,6 +183,8 @@ if __name__ == '__main__':
 	parser = create_parser()
 	opts = parser.parse_args()
 
+	if opts.debug is True:
+		DEBUG = True
 	# Read config file
 	if opts.config is not None:
 		try:
@@ -193,7 +195,9 @@ if __name__ == '__main__':
 		except yaml.scanner.ScannerError as exc:
 			print("Error: Scanning Error while reading config file [{}]".format(str(exc)))
 			sys.exit(1)
-
+	else:
+		config = DEFAULT_CONFIG
+		
 	# Check output directory
 	if os.path.isdir(opts.directory):
 		print("Warning: Output directory {} exists.  Compiled files will be overwritten.")
