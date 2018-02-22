@@ -13,16 +13,16 @@ class InvalidCSVFileError(Exception):
 
 class StudentListFormat(object):
 	# Format specific data for the student list
-	EMAIL_HEADER = 0             # The column number of the email value
-	FACULTY_HEADER = 1           # The column number of the faculty value
-	INTERNATIONAL_HEADER = 2     # The column number of the international value
-	INTERNATIONAL_LABEL = 'INT'  # The label for the international classifier
+	EMAIL_HEADER = 5             # The column number of the email value
+	FACULTY_HEADER = 0           # The column number of the faculty value
+	INTERNATIONAL_HEADER = 6     # The column number of the international value
+	INTERNATIONAL_LABEL = 'Visa'  # The label for the international classifier
 
 
 class ResultsListFormat(object):
 	# Format specific data for the form entries 
 	EMAIL_HEADER = 1             # The column number of the email value
-	FACULTY_HEADER = 3           # The column number of the faculty value
+	FACULTY_HEADER = 2          # The column number of the faculty value
 	INTERNATIONAL_HEADER = 11    # The column number of the international value
 	INTERNATIONAL_LABEL = 'Yes'  # The label for the international classifier
 
@@ -58,6 +58,8 @@ def validate_options(parser, opts):
 
 	create_destination_folder(opts.destination)
 
+	print("Reading from Student List: {}".format(opts.students))
+	print("Reading from Results List: {}".format(opts.results))
 
 def create_destination_folder(dirname):
 	# Create destination folder 
@@ -120,24 +122,24 @@ def read_student_list(filename, comments=None, headers=None):
 
 def results_datetime_str():
 	# Format a nice datetime string for the results file
-	return "Results From {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%s"))
+	return "Results From {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 def write_results_header(filename, comment_str, header_str=None):
 	# Overwrites a given file with initial comments and optional headers
-	with open(filename, 'w') as f:
-		f.writeline("# " + comment_str)
-		f.writeline("# " + results_datetime_str())
+	with open(filename, 'w', newline="") as f:
+		f.write("# " + comment_str+os.linesep)
+		f.write("# " + results_datetime_str()+os.linesep)
 		if header_str is not None:
-			f.writeline(str(header_str))
+			f.write(str(header_str)+os.linesep)
 
 def void_student(f, row, reason):
 	# Void a student for a given reason, the reason is included in the voided results file
 	print("VOIDING STUDENT: [{}] {}".format(reason, row[ResultsListFormat.EMAIL_HEADER]))
-	f.writeline(",".join(row + [reason]))
+	f.write(",".join(row + [reason])+os.linesep)
 
-def validated_student(f, row):
+def validate_student(f, row):
 	# Validate a student, write their data to the validated results file
-	f.writeline(",".join(row + [reason]))
+	f.write(",".join(row)+os.linesep)
 
 def validate_results_list(students_list, results_list, destination_dir):
 	# Read election results list from csv file
@@ -159,11 +161,11 @@ def validate_results_list(students_list, results_list, destination_dir):
 
 		# Get the header string and write them to the results files
 		results_header = next(reader) 
-		write_results_header(voided_file, 'VOIDED STUDENTS', header_str=results_header+',Reason')	
-		write_results_header(validated_file, 'VALIDATED STUDENTS', header_str=results_header)
+		write_results_header(voided_file, 'VOIDED STUDENTS', header_str=",".join(results_header + ['Reason']))	
+		write_results_header(validated_file, 'VALIDATED STUDENTS', header_str=",".join(results_header))
 
-		void_f = open(voided_file, 'a')
-		validate_f = open(validate_file, 'a')
+		void_f = open(voided_file, 'a', newline="")
+		validate_f = open(validated_file, 'a', newline="")
 
 		for row in reader:
 			summary['entries'] += 1
@@ -188,17 +190,17 @@ def validate_results_list(students_list, results_list, destination_dir):
 				void_student(void_f, row, 'Not in Student List')
 				summary['voided'] += 1
 			elif students[email][0].lower() != faculty.lower():
-				void_student(void_f, row, "Incorrect Faculty")
+				void_student(void_f, row, "Incorrect Faculty: Expected [{}] Got [{}] ".format(faculty, students[email][0]))
 				summary['voided'] += 1
 			elif students[email][1] != international:
-				void_student(void_f, row, "Incorrect International Status")
+				void_student(void_f, row, "Incorrect International Status: Expected [{}] Got [{}]".format(international, students[email][1]))
 				summary['voided'] += 1
 			else:
 				validate_student(validate_f, row)
 				summary['validated'] += 1
 
 		void_f.close()
-		validiate_f.close()
+		validate_f.close()
 
 	# Print summary
 	print("Done!")
