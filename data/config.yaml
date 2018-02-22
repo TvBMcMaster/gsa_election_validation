@@ -1,0 +1,23 @@
+#
+# YAML Config for GSA Elections
+#
+
+# All Column values are 1-index
+faculty_column: 3  # The column in the dataset where the faculty is listed
+user_column: 2     # The column in the dataset where the user identifier is listed (ie email)
+frc_votes: 2       # The number of votes alloted to frc roles (default:  2)
+exec_votes: 1      # The number of votes alloted to exec roles (default: 1)
+frc_offset: 4      # The column number to offset first FRC votes
+frc_elections:     # List the available FRC elections by faculty in the order the data is presented in the results file
+  - Social Sciences
+  - Humanities
+  - Health Sciences
+  - Business
+exec_offset: 15
+exec_elections:    # List the available Executive elections by role in the order the data is presented in the results file
+  - VP Administration
+  - VP Internal
+  - VP External
+  - VP Services
+  - President
+international_offset: 13  # Data column of international qualifer (default: true)?
