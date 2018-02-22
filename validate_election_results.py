@@ -6,6 +6,7 @@ import sys
 import csv
 from datetime import datetime
 
+DEFAULT_OUTPUT_DIR = "validation_results_{}".format(datetime.now().strftime('%Y%m%d'))
 
 class InvalidCSVFileError(Exception):
 	pass
@@ -34,8 +35,8 @@ def create_parser():
 	parser.add_argument('-s', '--students', help="Student List CSV file from SGS")
 	parser.add_argument(
 		'-d', '--destination', 
-		default="validation_results_{}".format(datetime.now().strftime('%Y%m%d')), 
-		help="Destination folder to create for all output files"
+		default=DEFAULT_OUTPUT_DIR, 
+		help="Destination folder to create for all output files.  Default: {}".format(DEFAULT_OUTPUT_DIR)
 	)
 	return parser
 

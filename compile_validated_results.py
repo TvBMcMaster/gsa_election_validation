@@ -6,8 +6,7 @@ from datetime import datetime
 try:
 	import yaml
 except ImportError:
-	print("This script requires the package pyyaml to be installed.  Install it via `pip install pyyaml`")
-	sys.exit(1)
+	yaml = None
 
 DEBUG = True  # Set this to False before releasing
 
@@ -31,13 +30,15 @@ DEFAULT_CONFIG = {
 	'exec_elections': ["VP Administration", "VP Internal", "VP External", "VP Services", "President"]
 }
 
+DEFAULT_OUTPUT_DIR = "compiled_results_{}".format(datetime.now().strftime("%Y%m%d"))
+
 def create_parser():
 	# Build argument parser
 	parser = argparse.ArgumentParser()
 	parser.add_argument('file', help="Validated Results File")
 	parser.add_argument('-c', '--config', help="Provide a config file for the program.")
 	#parser.add_argument('-r', '--results_file', default="compilation_results_{}.csv".format(datetime.now().strftime("%Y%m%d")))
-	parser.add_argument('-d', '--directory', default="compiled_results_{}".format(datetime.now().strftime("%Y%m%d")), help="Write compiled votes into a given directory.")
+	parser.add_argument('-d', '--directory', default=DEFAULT_OUTPUT_DIR, help="Write compiled votes into a given directory. Default: {}".format(DEFAULT_OUTPUT_DIR))
 
 	return parser
 
@@ -48,6 +49,10 @@ def debug(msg):
 def read_config(config_file):
 	if config_file is None:
 		return DEFAULT_CONFIG
+
+	if yaml is None:
+		print("Error: This script requires the package pyyaml to be installed.  Install it via `pip install pyyaml`")
+		sys.exit(1)
 
 	with open(config_file, 'r') as f:
 		config = yaml.load(f)
@@ -179,14 +184,15 @@ if __name__ == '__main__':
 	opts = parser.parse_args()
 
 	# Read config file
-	try:
-		config = read_config(opts.config)
-	except FileNotFoundError:
-		print("Error: Config File not found [{}]".format(opts.config))
-		sys.exit(1)
-	except yaml.scanner.ScannerError as exc:
-		print("Error: Scanning Error while reading config file [{}]".format(str(exc)))
-		sys.exit(1)
+	if opts.config is not None:
+		try:
+			config = read_config(opts.config)
+		except FileNotFoundError:
+			print("Error: Config File not found [{}]".format(opts.config))
+			sys.exit(1)
+		except yaml.scanner.ScannerError as exc:
+			print("Error: Scanning Error while reading config file [{}]".format(str(exc)))
+			sys.exit(1)
 
 	# Check output directory
 	if os.path.isdir(opts.directory):
