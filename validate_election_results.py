@@ -23,8 +23,8 @@ class StudentListFormat(object):
 class ResultsListFormat(object):
 	# Format specific data for the form entries 
 	EMAIL_HEADER = 1             # The column number of the email value
-	FACULTY_HEADER = 2          # The column number of the faculty value
-	INTERNATIONAL_HEADER = 11    # The column number of the international value
+	FACULTY_HEADER = -1          # The column number of the faculty value
+	INTERNATIONAL_HEADER = 2    # The column number of the international value
 	INTERNATIONAL_LABEL = 'Yes'  # The label for the international classifier
 
 
@@ -168,6 +168,9 @@ def validate_results_list(students_list, results_list, destination_dir):
 		void_f = open(voided_file, 'a', newline="")
 		validate_f = open(validated_file, 'a', newline="")
 
+		print("FacultyHeader: {}".format(ResultsListFormat.FACULTY_HEADER))
+		print("InternationalHeader: {}".format(ResultsListFormat.INTERNATIONAL_HEADER))
+
 		for row in reader:
 			summary['entries'] += 1
 
@@ -175,8 +178,17 @@ def validate_results_list(students_list, results_list, destination_dir):
 			# Warng about bad formatting in a single row, nope out for any other exception
 			try:
 				email = row[ResultsListFormat.EMAIL_HEADER].lower()
-				faculty = row[ResultsListFormat.FACULTY_HEADER].title()
-				international = row[ResultsListFormat.INTERNATIONAL_HEADER] == ResultsListFormat.INTERNATIONAL_LABEL
+
+				if ResultsListFormat.FACULTY_HEADER > 0:
+					faculty = row[ResultsListFormat.FACULTY_HEADER].title()
+				else:
+					faculty = None
+
+				if ResultsListFormat.INTERNATIONAL_HEADER > 0:
+					international = row[ResultsListFormat.INTERNATIONAL_HEADER] == ResultsListFormat.INTERNATIONAL_LABEL
+				else:
+					international = None
+
 			except IndexError:
 				print("Error: Bad formatting encountered while reading Results file: {}[{}]".format(results_list, reader.line_num))
 				continue
@@ -186,13 +198,16 @@ def validate_results_list(students_list, results_list, destination_dir):
 				break
 				continue
 
+			
 			# Compare data against student list
 			if email not in students:
 				void_student(void_f, row, 'Not in Student List')
 				summary['voided'] += 1
-			elif students[email][0].lower() != faculty.lower():
-				void_student(void_f, row, "Incorrect Faculty: Expected [{}] Got [{}] ".format(faculty, students[email][0]))
-				summary['voided'] += 1
+			elif faculty is not None:
+				if students[email][0].lower() != faculty.lower():
+					void_student(void_f, row, "Incorrect Faculty: Expected [{}] Got [{}] ".format(faculty, students[email][0]))
+					summary['voided'] += 1
+
 			elif students[email][1] != international:
 				void_student(void_f, row, "Incorrect International Status: Expected [{}] Got [{}]".format(international, students[email][1]))
 				summary['voided'] += 1

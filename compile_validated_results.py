@@ -8,7 +8,7 @@ try:
 except ImportError:
 	yaml = None
 
-DEBUG = False
+DEBUG = True
 
 FACULTY_COLUMN = 2
 
@@ -19,15 +19,16 @@ DEFAULT_EXECUTIVE_CANDIDATES = 2  # 1 + Abstain
 VALIDATED_STUDENTS_NUM_HEADERS = 3  # Number of header lines to ignore before reading CSV
 
 DEFAULT_CONFIG = {
-	'faculty_column': 3,
+	'faculty_column': -1,
 	'user_column': 2,
 	'frc_votes': 2,
 	'exec_votes': 1,
-	'international_offset': 13,
-	'frc_offset': 4,
-	'frc_elections': ["Social Sciences", "Humanities", "Health Sciences", "Business"],
-	'exec_offset': 15,
-	'exec_elections': ["VP Administration", "VP Internal", "VP External", "VP Services", "President"]
+	'international_offset': 3,
+	'international_votes': 1,
+	'frc_offset': -1,
+	'frc_elections': [],
+	'exec_offset': 5,
+	'exec_elections': ["VP Internal", "VP External", "President"]
 }
 
 DEFAULT_OUTPUT_DIR = "compiled_results_{}".format(datetime.now().strftime("%Y%m%d"))
@@ -76,7 +77,9 @@ def create_election_files(directory, *elections):
 	for election_type in elections:
 		for election in election_type:
 			converted_election = convert_election_name(election)
+
 			the_files[election] = open(os.path.join(directory, converted_election +'.csv'), 'w', newline="")
+			the_files[election].write(",".join(["Email", "Candidate"])+os.linesep)
 
 	return the_files
 
@@ -99,6 +102,7 @@ def build_election_columns(config):
 	election_columns['Faculty'] = config['faculty_column']-1
 
 	# Find columns for FRC elections
+
 	current_col = config['frc_offset']-1
 	for faculty in config['frc_elections']:
 		election_columns[faculty] = current_col
@@ -129,6 +133,7 @@ def compile_validated_results(validated_file, config, output_directory):
 
 	election_columns = build_election_columns(config)
 
+	# print(election_columns)
 	with open(validated_file, 'r') as validated_f:
 
 		[next(validated_f) for i in range(VALIDATED_STUDENTS_NUM_HEADERS)]
@@ -138,7 +143,10 @@ def compile_validated_results(validated_file, config, output_directory):
 		for row in reader:
 			# print(row)
 			user = row[election_columns['User']]  # Index-1 to convert to 0-indexing
-			faculty = row[election_columns['Faculty']]
+			if election_columns["Faculty"] > 0:
+				faculty = row[election_columns['Faculty']]
+			else:
+				faculty = None
 			# debug("International: {}".format(row[election_columns['International']-1]))
 
 			if faculty in config['frc_elections']:
@@ -154,9 +162,11 @@ def compile_validated_results(validated_file, config, output_directory):
 						election_files[faculty].write(",".join([user, vote])+os.linesep)
 
 			# Compile International FRC Votes
-			if row[election_columns['International']-1] == 'Yes':
-				for i in range(config['frc_votes']):
-					vote = row[election_columns['International']+i]
+			
+			if row[election_columns['International']] == 'Yes':
+				for i in range(config['international_votes']):
+					vote = row[election_columns['International']+1+i]
+					print(vote)
 					if vote == '':
 						print("Warning: Empty International Vote found [{}]".format(user))
 					else:
